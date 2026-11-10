@@ -4,12 +4,103 @@ from __future__ import annotations
 import argparse
 import importlib
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
 from urllib.parse import urlsplit
 
 SETUP_REPO = "https://github.com/Liso7150/colibri-environment-setup.git"
+ROOT_SUBDIRS = ("engine", "suite", "models", "cache", "setup")
+LAYOUT_HELP = {
+    "engine": "Colibri engine checkout and shared Python venv",
+    "suite": "suite sources: desktop, core, CLI, plugins, fine-tuning",
+    "models": "model weights you add later (nothing is downloaded here)",
+    "cache": "pip / npm / Hugging Face caches",
+    "setup": "environment setup hub used by this installer",
+}
+
+
+def default_destination(home=None):
+    return Path(home or Path.home()) / "Colibri"
+
+
+def layout(root):
+    root = Path(root)
+    return {name: root / name for name in ROOT_SUBDIRS}
+
+
+def validate_destination(value, *, home=None):
+    """Expand, normalize and sanity-check an install destination."""
+    raw = os.path.expandvars(str(value)).strip()
+    if not raw:
+        raise ValueError("Install destination cannot be empty")
+    if raw == "~" or raw.startswith(("~/", "~\\")):
+        raw = str(Path(home or Path.home())) + raw[1:]
+    path = Path(raw).expanduser()
+    if not path.is_absolute():
+        path = Path.cwd() / path
+    path = path.resolve()
+    if path.parent == path:
+        raise ValueError("Choose an install folder, not a drive or filesystem root")
+    if path.exists() and not path.is_dir():
+        raise ValueError(f"Install destination is a file: {path}")
+    anchor = path if path.exists() else path.parent
+    while not anchor.exists() and anchor != anchor.parent:
+        anchor = anchor.parent
+    if not anchor.exists():
+        raise ValueError(f"The destination volume does not exist: {path}")
+    if not os.access(anchor, os.W_OK):
+        raise ValueError(f"Install destination is not writable: {anchor}")
+    return path
+
+
+def _free_gib(path):
+    anchor = path
+    while not anchor.exists() and anchor != anchor.parent:
+        anchor = anchor.parent
+    try:
+        return shutil.disk_usage(anchor).free / (1024 ** 3)
+    except OSError:
+        return None
+
+
+def choose_destination(value=None, assume_yes=False, *, interactive=None, home=None,
+                       ask=input, echo=print):
+    """Return the chosen local root, or None when the caller should use defaults.
+
+    The prompt only appears on an interactive terminal without --yes; explicit
+    paths are validated but never re-prompted.
+    """
+    if value:
+        return validate_destination(value, home=home)
+    if assume_yes:
+        return None
+    if interactive is None:
+        interactive = sys.stdin.isatty()
+    if not interactive:
+        return None
+    default = default_destination(home)
+    while True:
+        raw = ask(f"Install destination for Colibri [{default}]: ").strip()
+        try:
+            chosen = validate_destination(raw or default, home=home)
+        except ValueError as exc:
+            echo(f"  {exc}")
+            continue
+        parts = layout(chosen)
+        if chosen.exists() and any(chosen.iterdir()) and not any(p.exists() for p in parts.values()):
+            if ask(f"{chosen} is not empty and has no Colibri layout. Use it anyway? [y/N] ").strip().lower() not in ("y", "yes"):
+                continue
+        echo(f"\nEverything goes under {chosen} and stays on this device:")
+        for name, path in parts.items():
+            echo(f"  {name:<7} {path}  - {LAYOUT_HELP[name]}")
+        free = _free_gib(chosen)
+        if free is not None:
+            echo(f"  free on this volume: {free:.1f} GiB")
+        echo("Repositories are downloaded from GitHub; no models are downloaded and nothing is uploaded.\n")
+        if ask("Use this destination? [Y/n] ").strip().lower() in ("", "y", "yes"):
+            return chosen
 
 
 def default_setup_home():
@@ -102,7 +193,8 @@ def parser():
     ap.add_argument("--yes", action="store_true", help="confirm explicit actions, never selects features")
     ap.add_argument("--setup-home", type=Path)
     ap.add_argument("--manifest", help="alternate trusted manifest")
-    ap.add_argument("--root", help="ROOT/{engine,suite,models,cache}; bootstrap hub at ROOT/setup")
+    ap.add_argument("--root", help="install destination: ROOT/{engine,suite,models,cache,setup}; "
+                                   "prompted on an interactive run when omitted (default ~/Colibri)")
     ap.add_argument("--config")
     for key in ("engine-root", "suite-root", "models-root", "cache-root", "python", "model",
                 "engine-url", "web-root", "workspace", "backend", "policy"):
@@ -133,6 +225,12 @@ def main(argv=None):
             raise ValueError("--json requires --plan")
         if args.plan and not (args.features or args.all) and args.json:
             raise ValueError("JSON planning requires --features or --all")
+        explicit_roots = any(getattr(args, key, None) for key in
+                             ("engine_root", "suite_root", "models_root", "cache_root"))
+        if args.root or not explicit_roots:
+            chosen = choose_destination(args.root, args.yes)
+            if chosen is not None:
+                args.root = str(chosen)
         if not args.plan and not args.yes:
             if not sys.stdin.isatty():
                 raise ValueError("Noninteractive mutation requires --yes and an explicit mode/selection")
@@ -155,6 +253,8 @@ def main(argv=None):
             features = choose_features(MenuSetup, None, args.yes,
                                        recommendations=cs.recommend(cs.detect())["features"])
         plan = plan_from_args(manifest, args, features)
+        if args.root and not args.json:
+            print(f"Destination: {args.root} - repositories, venv, models and caches stay on this device")
         print_plan(plan, machine=args.json)
         if not args.plan:
             execute_plan(plan, install=args.install)
