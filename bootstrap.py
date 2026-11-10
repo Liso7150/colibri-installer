@@ -25,6 +25,35 @@ def default_destination(home=None):
     return Path(home or Path.home()) / "Colibri"
 
 
+def available_volumes():
+    """Writable fixed volumes, largest free space first (Windows only)."""
+    if os.name != "nt":
+        return []
+    volumes = []
+    for letter in "CDEFGHIJKLMNOPQRSTUVWXYZ":
+        root = Path(f"{letter}:\\")
+        try:
+            if not root.is_dir():
+                continue
+            free = shutil.disk_usage(root).free / (1024 ** 3)
+        except OSError:
+            continue
+        volumes.append((root, free))
+    return sorted(volumes, key=lambda item: item[1], reverse=True)
+
+
+def drive_destination(value, *, folder="Fennec", home=None):
+    """Resolve a drive letter (`E`, `E:`, `E:/`) to the default folder on it."""
+    raw = os.path.expandvars(str(value)).strip().rstrip("\\/")
+    if not raw:
+        raise ValueError("Choose a drive letter or a folder")
+    if len(raw) == 1 and raw.isalpha():
+        raw = f"{raw}:"
+    if len(raw) == 2 and raw[1] == ":":
+        return validate_destination(f"{raw}/{folder}", home=home)
+    return validate_destination(raw, home=home)
+
+
 def layout(root):
     root = Path(root)
     return {name: root / name for name in ROOT_SUBDIRS}
@@ -81,10 +110,25 @@ def choose_destination(value=None, assume_yes=False, *, interactive=None, home=N
     if not interactive:
         return None
     default = default_destination(home)
+    volumes = available_volumes()
     while True:
-        raw = ask(f"Install destination for Fennec [{default}]: ").strip()
+        if volumes:
+            echo("\nWhere should Fennec be installed? Any drive or folder works:")
+            echo(f"  [d] {default}  (default)")
+            for index, (root, free) in enumerate(volumes, 1):
+                echo(f"  [{index}] {root}Fennec  ({free:.1f} GiB free)")
+            echo("  or type another folder, for example E:/Apps/Fennec")
+            prompt = "Install destination [d]: "
+        else:
+            prompt = f"Install destination for Fennec [{default}]: "
+        raw = ask(prompt).strip()
         try:
-            chosen = validate_destination(raw or default, home=home)
+            if not raw or raw.lower() in ("d", "default"):
+                chosen = validate_destination(default, home=home)
+            elif raw.isdigit() and volumes and 1 <= int(raw) <= len(volumes):
+                chosen = validate_destination(volumes[int(raw) - 1][0] / "Fennec", home=home)
+            else:
+                chosen = drive_destination(raw, home=home)
         except ValueError as exc:
             echo(f"  {exc}")
             continue
@@ -106,8 +150,7 @@ def choose_destination(value=None, assume_yes=False, *, interactive=None, home=N
 def default_setup_home():
     if os.environ.get("FENNEC_SETUP_HOME"):
         return Path(os.environ["FENNEC_SETUP_HOME"]).expanduser().resolve()
-    legacy = Path("D:/Fennec-Environment-Setup")
-    return legacy if os.name == "nt" and legacy.exists() else Path.home() / "Fennec-Environment-Setup"
+    return Path.home() / "Fennec-Environment-Setup"
 
 
 def _git(args, cwd=None):
@@ -195,6 +238,8 @@ def parser():
     ap.add_argument("--manifest", help="alternate trusted manifest")
     ap.add_argument("--root", help="install destination: ROOT/{engine,suite,models,cache,setup}; "
                                    "prompted on an interactive run when omitted (default ~/Colibri)")
+    ap.add_argument("--drive", help="install into <DRIVE>/Fennec instead of ~/Colibri; "
+                                     "accepts C, C: or E:/Apps/Fennec")
     ap.add_argument("--config")
     for key in ("engine-root", "suite-root", "models-root", "cache-root", "python", "model",
                 "engine-url", "web-root", "workspace", "backend", "policy"):
@@ -229,7 +274,11 @@ def main(argv=None):
             raise ValueError("JSON planning requires --features or --all")
         explicit_roots = any(getattr(args, key, None) for key in
                              ("engine_root", "suite_root", "models_root", "cache_root"))
-        if args.root or not explicit_roots:
+        if args.drive and args.root:
+            raise ValueError("--drive and --root are alternatives; pass only one")
+        if args.drive:
+            args.root = str(drive_destination(args.drive))
+        elif args.root or not explicit_roots:
             chosen = choose_destination(args.root, args.yes)
             if chosen is not None:
                 args.root = str(chosen)

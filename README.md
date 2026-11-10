@@ -10,7 +10,7 @@ drives its plan/fetch/install pipeline.
 
 - Device detection: OS, CPU/RAM, NVIDIA/Vulkan/Apple GPUs, Intel NPU, free disk and Python.
 - Feature menu with dependency closure; unknown or cyclic features are rejected.
-- Install destination selection (`--root` or interactive) — repos, venv, models, caches and config stay on the device.
+- Install destination selection: an interactive drive picker (`--drive E` -> `E:/Fennec`) or any folder (`--root`). — repos, venv, models, caches and config stay on the device.
 - Plan / fetch / install / build actions; the installer never downloads models or starts a server.
 - `--update` fast-forwards every installed clean checkout from GitHub (local work is never reset).
 - Termux on Android installs the local core + PWA on the phone; Android and iOS browsers are PWA clients.
@@ -38,8 +38,9 @@ installer.
 
 ## Install destination
 
-On an interactive run the installer first asks where everything should live
-(default `~/Colibri`) and shows the layout before anything is downloaded:
+On an interactive run the installer first asks where everything should live: it
+lists the drives it finds with their free space, offers the default (`~/Colibri`),
+and accepts any drive letter or folder (default `~/Colibri`) and shows the layout before anything is downloaded:
 
 ```
 ROOT/engine   Colibri engine checkout and shared Python venv
@@ -53,7 +54,8 @@ Every repository, the venv, your model files and all caches stay under that
 folder on this device. Only public GitHub sources are downloaded — no models
 are fetched automatically and nothing is uploaded. The shared runtime config is
 the one small file written outside it (`~/.fennec/config.json`), because every
-Fennec app reads it. Pass `--root /path/to/destination` to skip the prompt;
+Fennec app reads it. Pass `--drive E` to install into `E:/Fennec`, or `--root /path/to/destination`
+to skip the prompt entirely;
 `--yes` keeps the default roots (`~/Colibri`, `~/Fennec-Suite`,
 `~/fennec-models`, `~/.cache/fennec` on a fresh machine) or any roots passed
 explicitly.
@@ -94,7 +96,7 @@ iOS use the PWA as a client of a Fennec host. There is no APK build pipeline yet
 ## Migrating an existing Colibri install
 
 `migrate_rebrand.py` moves a pre-1.4 machine onto the Fennec names in one pass:
-the suite/hub/models folders, `D:/.cache/colibri-*`, `~/.colibri` → `~/.fennec`,
+the suite/hub/models folders, `<root>/.cache/colibri-*`, `~/.colibri` → `~/.fennec`,
 `~/.colibri-code` → `~/.fennec-desktop`, the roots inside `config.json`, the
 legacy `acp.registry.colibri` records in Air's overlay and `installed.json`, the
 `Colibri` picker entry, the `air.acp.registry.path` vmoption, and the model path
@@ -110,12 +112,12 @@ config, so a failed run is safe to repeat. **Close Qoder and every JetBrains IDE
 first**: Windows refuses to rename a directory while a process holds a file
 inside it open (Qoder's indexer holds the desktop build's `release-*/app.asar`).
 
-On Windows, copy `migrate-fennec.bat` **outside** the suite (for example to
-`D:\MIGRATE-FENNEC.bat`) and run that. `cmd.exe` keeps a handle on the running
-batch file, so a launcher left inside `D:\Colibri-Suite` would block the rename
+On Windows, copy `migrate-fennec.bat` **outside** the suite (a drive root or
+`%USERPROFILE%` works) and run that. `cmd.exe` keeps a handle on the running
+batch file, so a launcher left inside the suite would block the rename
 it is trying to perform; the copy also stages the Python script in `%TEMP%`.
 
-Deliberately untouched: the engine checkout `D:/Colibri` (upstream
+Deliberately untouched: the engine checkout (default `~/Colibri`, upstream
 [JustVugg/colibri](https://github.com/JustVugg/colibri)), its `.venv`, its `COLI_*`
 variables and its `c/coli` entry point. Every edited file keeps a
 `*.bak-fennec-rebrand` backup beside it, and the stale desktop code index is

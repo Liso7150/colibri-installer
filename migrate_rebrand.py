@@ -9,12 +9,14 @@ release-*/app.asar, the IDE holds its plugin jar) the rename is reported and the
 run stops before any config is rewritten. Close Qoder and every JetBrains IDE,
 then re-run --apply to finish.
 
-The engine checkout D:/Colibri is upstream JustVugg/colibri and keeps its name,
-its COLI_* variables and its c/coli entry point. Only the model path inside its
-local stack scripts follows the models folder rename.
+The engine checkout is upstream JustVugg/colibri and keeps its name, its COLI_*
+variables and its c/coli entry point. Only the model path inside its local stack
+scripts follows the models folder rename. Nothing here assumes a particular
+drive: pass --suite, set FENNEC_SUITE, or run it from inside the suite.
 
-Run the companion migrate-fennec.bat from OUTSIDE the suite (copy it to D:\\):
-a batch file inside a directory being renamed holds a handle that blocks it.
+Run the companion migrate-fennec.bat from OUTSIDE the suite (copy it to a folder
+outside the suite, for example the drive root): a batch file inside a directory
+being renamed holds a handle that blocks it.
 """
 from __future__ import annotations
 
@@ -76,10 +78,17 @@ def discover(suite: str | None = None) -> Roots:
     candidates = []
     if suite:
         candidates.append(Path(suite).expanduser().resolve())
+    if os.environ.get("FENNEC_SUITE"):
+        candidates.append(Path(os.environ["FENNEC_SUITE"]).expanduser().resolve())
+    def is_suite(path):
+        return (path / "fennec-installer").is_dir() or (path / "colibri-code").is_dir()
+
     here = Path(__file__).resolve().parent.parent
-    if (here / "fennec-installer").is_dir() or (here / "colibri-code").is_dir():
+    if is_suite(here):
         candidates.append(here)
-    candidates += [Path("D:/Fennec-Suite"), Path("D:/Colibri-Suite")]
+    for base in (Path.cwd(), Path.cwd().parent):
+        if is_suite(base):
+            candidates.append(base)
     current = next((p for p in candidates if p.is_dir()), None)
     if current is None:
         raise SystemExit("migrate_rebrand: no suite checkout found; pass --suite <dir>")
@@ -107,7 +116,7 @@ def discover(suite: str | None = None) -> Roots:
 
 
 def replacements(roots: Roots) -> list[tuple[str, str]]:
-    """Ordered longest-first so D:/Colibri (the engine) is never rewritten."""
+    """Ordered longest-first so the engine checkout is never rewritten."""
     pairs: list[tuple[str, str]] = []
 
     def add(old: str, new: str) -> None:
