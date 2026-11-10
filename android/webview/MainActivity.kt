@@ -1,4 +1,4 @@
-package dev.colibri.webview
+package dev.fennec.webview
 
 import android.annotation.SuppressLint
 import android.os.Bundle
@@ -7,7 +7,7 @@ import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
 
 /**
- * Minimal scaffold: loads a local/LAN Colibri server in a WebView.
+ * Minimal scaffold: loads a local/LAN Fennec server in a WebView.
  * Requires Android SDK + Gradle + androidx.appcompat to build (not shipped here).
  * Add <uses-permission android:name="android.permission.INTERNET"/> to the manifest
  * and allow cleartext for 127.0.0.1 via a network-security-config if needed.
@@ -22,7 +22,7 @@ class MainActivity : AppCompatActivity() {
         webView.webViewClient = WebViewClient()
         setContentView(webView)
         // Point at the Termux-run engine or a LAN host.
-        val url = System.getenv("COLIBRI_URL") ?: "http://127.0.0.1:8184"
+        val url = System.getenv("FENNEC_URL") ?: "http://127.0.0.1:8184"
         webView.loadUrl(url)
     }
 }

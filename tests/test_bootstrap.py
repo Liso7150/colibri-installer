@@ -22,13 +22,13 @@ import install  # noqa: E402
 class SetupHomeTests(unittest.TestCase):
     def test_environment_override(self):
         with tempfile.TemporaryDirectory() as directory:
-            with mock.patch.dict(os.environ, {"COLIBRI_SETUP_HOME": directory}):
+            with mock.patch.dict(os.environ, {"FENNEC_SETUP_HOME": directory}):
                 self.assertEqual(bootstrap.default_setup_home(), Path(directory).resolve())
 
 
 class DestinationTests(unittest.TestCase):
     def test_layout_covers_engine_suite_models_cache_setup(self):
-        root = Path(tempfile.gettempdir()) / "colibri-layout"
+        root = Path(tempfile.gettempdir()) / "fennec-layout"
         parts = bootstrap.layout(root)
         self.assertEqual(list(parts), ["engine", "suite", "models", "cache", "setup"])
         self.assertEqual(parts["setup"], root / "setup")
@@ -93,7 +93,7 @@ class BootstrapGuardTests(unittest.TestCase):
             home = Path(directory)
             subprocess.run(["git", "init", "-q", str(home)], check=True)
             subprocess.run(["git", "-C", str(home), "remote", "add", "origin",
-                            "https://github.com/evil/colibri-environment-setup.git"], check=True)
+                            "https://github.com/evil/fennec-environment-setup.git"], check=True)
             with self.assertRaises(RuntimeError) as caught:
                 bootstrap.bootstrap_setup(home, allow_fetch=False)
             self.assertIn("Foreign setup origin", str(caught.exception))
@@ -143,12 +143,12 @@ class FeatureSelectionTests(unittest.TestCase):
                 bootstrap.choose_features(self.cs(), None, False)
 
     def test_all_selection(self):
-        package = types.ModuleType("colibri_setup")
+        package = types.ModuleType("fennec_setup")
         package.__path__ = []
-        provision = types.ModuleType("colibri_setup.provision")
+        provision = types.ModuleType("fennec_setup.provision")
         provision.selected_features = lambda manifest, features, all_features: list(manifest["features"])
-        with mock.patch.dict(sys.modules, {"colibri_setup": package,
-                                           "colibri_setup.provision": provision}):
+        with mock.patch.dict(sys.modules, {"fennec_setup": package,
+                                           "fennec_setup.provision": provision}):
             selected = bootstrap.choose_features(self.cs(), None, True, all_features=True)
         self.assertEqual(selected, ["inference", "installer"])
 

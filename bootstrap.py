@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 from urllib.parse import urlsplit
 
-SETUP_REPO = "https://github.com/Liso7150/colibri-environment-setup.git"
+SETUP_REPO = "https://github.com/Liso7150/fennec-environment-setup.git"
 ROOT_SUBDIRS = ("engine", "suite", "models", "cache", "setup")
 LAYOUT_HELP = {
     "engine": "Colibri engine checkout and shared Python venv",
@@ -82,7 +82,7 @@ def choose_destination(value=None, assume_yes=False, *, interactive=None, home=N
         return None
     default = default_destination(home)
     while True:
-        raw = ask(f"Install destination for Colibri [{default}]: ").strip()
+        raw = ask(f"Install destination for Fennec [{default}]: ").strip()
         try:
             chosen = validate_destination(raw or default, home=home)
         except ValueError as exc:
@@ -90,7 +90,7 @@ def choose_destination(value=None, assume_yes=False, *, interactive=None, home=N
             continue
         parts = layout(chosen)
         if chosen.exists() and any(chosen.iterdir()) and not any(p.exists() for p in parts.values()):
-            if ask(f"{chosen} is not empty and has no Colibri layout. Use it anyway? [y/N] ").strip().lower() not in ("y", "yes"):
+            if ask(f"{chosen} is not empty and has no Fennec layout. Use it anyway? [y/N] ").strip().lower() not in ("y", "yes"):
                 continue
         echo(f"\nEverything goes under {chosen} and stays on this device:")
         for name, path in parts.items():
@@ -104,10 +104,10 @@ def choose_destination(value=None, assume_yes=False, *, interactive=None, home=N
 
 
 def default_setup_home():
-    if os.environ.get("COLIBRI_SETUP_HOME"):
-        return Path(os.environ["COLIBRI_SETUP_HOME"]).expanduser().resolve()
-    legacy = Path("D:/Colibri-Enviorment-Setup")
-    return legacy if os.name == "nt" and legacy.exists() else Path.home() / "Colibri-Environment-Setup"
+    if os.environ.get("FENNEC_SETUP_HOME"):
+        return Path(os.environ["FENNEC_SETUP_HOME"]).expanduser().resolve()
+    legacy = Path("D:/Fennec-Environment-Setup")
+    return legacy if os.name == "nt" and legacy.exists() else Path.home() / "Fennec-Environment-Setup"
 
 
 def _git(args, cwd=None):
@@ -123,7 +123,7 @@ def _git(args, cwd=None):
 
 def bootstrap_setup(home, *, allow_fetch=False):
     if globals().get("__loader__") and type(__loader__).__module__ == "zipimport":
-        return importlib.import_module("colibri_setup")
+        return importlib.import_module("fennec_setup")
     home = Path(home).expanduser().resolve()
     if home.exists() and any(home.iterdir()):
         if not (home / ".git").exists():
@@ -137,27 +137,27 @@ def bootstrap_setup(home, *, allow_fetch=False):
                 parsed.password or parsed.query or parsed.fragment or
                 (parsed.username and not (parsed.scheme == "ssh" and parsed.username == "git")) or
                 parsed.port not in (None, 22 if parsed.scheme == "ssh" else 443) or
-                path != "/Liso7150/colibri-environment-setup"):
+                path != "/Liso7150/fennec-environment-setup"):
             raise RuntimeError(f"Foreign setup origin at {home}; expected {SETUP_REPO}")
         branch = _git(["symbolic-ref", "--quiet", "--short", "HEAD"], cwd=home)
         if branch != "main":
             raise RuntimeError(f"Setup hub must be on main, not {branch}; no automatic reset/checkout")
     else:
         if not allow_fetch:
-            raise RuntimeError("Read-only plan needs the setup hub. Use --setup-home /existing/verified/checkout or a bundled colibri-bootstrap.pyz; no clone was attempted.")
+            raise RuntimeError("Read-only plan needs the setup hub. Use --setup-home /existing/verified/checkout or a bundled fennec-bootstrap.pyz; no clone was attempted.")
         home.parent.mkdir(parents=True, exist_ok=True)
         print(f"Fetching setup hub only -> {home}", flush=True)
         _git(["clone", "--branch", "main", "--", SETUP_REPO, str(home)])
-    if not (home / "colibri_setup/provision.py").is_file():
+    if not (home / "fennec_setup/provision.py").is_file():
         raise RuntimeError("Setup hub lacks the portable provisioning API; update that checkout explicitly after reviewing local changes")
     sys.path.insert(0, str(home))
-    return importlib.import_module("colibri_setup")
+    return importlib.import_module("fennec_setup")
 
 
 def choose_features(cs, preselected, assume_yes, *, all_features=False, recommendations=()):
     manifest = cs.load_manifest()
     if preselected or all_features:
-        from colibri_setup.provision import selected_features
+        from fennec_setup.provision import selected_features
         return selected_features(manifest, preselected, all_features)
     if assume_yes or not sys.stdin.isatty():
         raise ValueError("Noninteractive use requires --features or --all; --yes never selects everything")
@@ -181,7 +181,7 @@ def choose_features(cs, preselected, assume_yes, *, all_features=False, recommen
 
 
 def parser():
-    ap = argparse.ArgumentParser(description="Portable Colibri environment bootstrap")
+    ap = argparse.ArgumentParser(description="Portable Fennec environment bootstrap")
     mode = ap.add_mutually_exclusive_group()
     mode.add_argument("--plan", "--dry-run", action="store_true", help="read-only action plan")
     mode.add_argument("--fetch-only", action="store_true", help="sources only, no installs/config writes")
@@ -200,7 +200,7 @@ def parser():
                 "engine-url", "web-root", "workspace", "backend", "policy"):
         ap.add_argument("--" + key)
     ap.add_argument("--ctx", type=int)
-    ap.add_argument("--native-target", default="colibri")
+    ap.add_argument("--native-target", default="fennec")
     ap.add_argument("--update", action="store_true")
     ap.add_argument("--json", action="store_true", help="JSON in --plan mode only")
     return ap
@@ -243,8 +243,8 @@ def main(argv=None):
             raise ValueError("--yes requires --features or --all (or --update for installed checkouts)")
         home = args.setup_home or (Path(args.root).expanduser() / "setup" if args.root else default_setup_home())
         cs = bootstrap_setup(home, allow_fetch=not args.plan)
-        from colibri_setup.config import KEYS
-        from colibri_setup.provision import plan_from_args, print_plan, execute_plan, selected_features, update_installed
+        from fennec_setup.config import KEYS
+        from fennec_setup.provision import plan_from_args, print_plan, execute_plan, selected_features, update_installed
         manifest = cs.load_manifest(args.manifest)
         if args.update and not (args.features or args.all):
             count = update_installed(manifest, root=args.root, config=args.config,

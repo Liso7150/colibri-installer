@@ -1,9 +1,9 @@
-# Colibri Installer
+# Fennec Installer
 
 The whole-environment entry point. Detects your device (OS, arch, GPU, NPU, RAM,
 disk), recommends a conservative inference config, and lets you choose which
 features/apps to fetch and install. It bootstraps the
-[environment setup](https://github.com/Liso7150/colibri-environment-setup) hub and
+[environment setup](https://github.com/Liso7150/fennec-environment-setup) hub and
 drives its plan/fetch/install pipeline.
 
 ## Features
@@ -33,7 +33,7 @@ python bootstrap.py --plan --all                            # read-only plan
 an explicit action but never selects features; noninteractive runs must pass
 `--features` or `--all` (or `--update` for installed checkouts). Installing also
 creates the shared venv, installs the selected dependencies and writes
-`~/.colibri/config.json` after all actions succeed. No server is started by the
+`~/.fennec/config.json` after all actions succeed. No server is started by the
 installer.
 
 ## Install destination
@@ -52,10 +52,10 @@ ROOT/setup    environment setup hub used by this installer
 Every repository, the venv, your model files and all caches stay under that
 folder on this device. Only public GitHub sources are downloaded — no models
 are fetched automatically and nothing is uploaded. The shared runtime config is
-the one small file written outside it (`~/.colibri/config.json`), because every
-Colibri app reads it. Pass `--root /path/to/destination` to skip the prompt;
-`--yes` keeps the default roots (`~/Colibri`, `~/Colibri-Suite`,
-`~/colibri-models`, `~/.cache/colibri` on a fresh machine) or any roots passed
+the one small file written outside it (`~/.fennec/config.json`), because every
+Fennec app reads it. Pass `--root /path/to/destination` to skip the prompt;
+`--yes` keeps the default roots (`~/Colibri`, `~/Fennec-Suite`,
+`~/fennec-models`, `~/.cache/fennec` on a fresh machine) or any roots passed
 explicitly.
 
 ## Device detection
@@ -89,7 +89,7 @@ model is never expected to run on a phone.
 
 Windows / macOS / Linux run the installer directly. Android can run the core and
 PWA locally in Termux (see [`android/`](android/README.md)); Android browsers and
-iOS use the PWA as a client of a Colibri host. There is no APK build pipeline yet.
+iOS use the PWA as a client of a Fennec host. There is no APK build pipeline yet.
 
 ## Tests
 
@@ -99,5 +99,6 @@ python -m unittest discover -s tests -v
 
 ## Credits
 
-Built on [Colibri](https://github.com/JustVugg/colibri) and
+Engine base idea: [JustVugg/colibri](https://github.com/JustVugg/colibri) —
+device-tiered MoE inference. Fine-tuning:
 [AirLLM](https://github.com/lyogavin/airllm).

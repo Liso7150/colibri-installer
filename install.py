@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Colibri installer — compatibility entry point for the portable bootstrap.
+"""Fennec installer — compatibility entry point for the portable bootstrap.
 
 `python install.py ...` keeps the historical behavior of downloading the selected
 repos; an explicit --plan/--fetch-only/--install/--build always wins. Use
@@ -12,8 +12,8 @@ and the shared runtime config written.
     python install.py --update --yes                      # update installed checkouts
     python install.py --install --features inference,desktop --yes
 
-Credits: Colibri engine (https://github.com/JustVugg/colibri) and
-AirLLM (https://github.com/lyogavin/airllm).
+Credits: the engine's base idea is Colibri (https://github.com/JustVugg/colibri);
+fine-tuning uses AirLLM (https://github.com/lyogavin/airllm).
 """
 import sys
 
