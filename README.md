@@ -66,7 +66,17 @@ and free disk. The recommendation is deliberately conservative: CPU decoding at
 GPU + 16 GB RAM → `ctx=4096`). Seeing a GPU is not proof that a native
 accelerator backend was compiled, so the plan keeps CPU until you verify an
 engine build and switch `backend` yourself. The Intel NPU is an embedding
-sidecar only, never a decoder.
+sidecar only, never a decoder. Selecting the `npu` feature installs what that
+sidecar imports (`openvino`, `openvino-tokenizers`, `numpy`, `huggingface-hub`)
+into the interpreter the apps resolve — the shared venv when it exists — and
+fetches the prebuilt OpenVINO IR embedding model
+(`OpenVINO/bge-base-en-v1.5-int8-ov`) into
+`<models_root>/embed/bge-base-en-v1.5-int8-ov`, which is exactly where the
+desktop app and the hub look for it. Nothing exports the model itself: the plan
+never installs `optimum-intel`, so torch and nncf stay out of that interpreter.
+Everything is cached under `<cache_root>` (`PIP_CACHE_DIR`, `HF_HOME`) and only
+runs in `--install` mode after you allow downloads; `--plan` just lists the
+commands.
 
 Android in a browser and iOS are detected as client-only: the hub refuses
 on-device engine installation and the plan points at a Windows/macOS/Linux host
