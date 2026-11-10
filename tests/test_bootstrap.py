@@ -168,6 +168,12 @@ class InstallEntryTests(unittest.TestCase):
             self.assertEqual(install.run(["--features", "inference"]), 0)
         self.assertIn("--fetch-only", called.call_args.args[0])
 
+    def test_update_maps_to_fetch_mode(self):
+        with mock.patch.object(install, "main", return_value=0) as called:
+            self.assertEqual(install.run(["--update", "--yes"]), 0)
+        self.assertIn("--fetch-only", called.call_args.args[0])
+        self.assertIn("--update", called.call_args.args[0])
+
     def test_explicit_modes_are_not_rewritten(self):
         for argv in (["--plan"], ["--dry-run"], ["--install"], ["--fetch-only"],
                      ["--build", "--all"], ["--help"]):

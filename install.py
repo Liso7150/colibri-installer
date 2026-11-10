@@ -9,6 +9,7 @@ and the shared runtime config written.
     python install.py                                    # interactive menu
     python install.py --features inference,desktop --yes  # fetch sources
     python install.py --all --yes                         # fetch everything
+    python install.py --update --yes                      # update installed checkouts
     python install.py --install --features inference,desktop --yes
 
 Credits: Colibri engine (https://github.com/JustVugg/colibri) and

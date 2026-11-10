@@ -214,6 +214,8 @@ def main(argv=None):
         if not (args.plan or args.fetch_only or args.install):
             if args.build:
                 args.install = True
+            elif args.update:
+                args.fetch_only = True
             elif args.yes or not sys.stdin.isatty():
                 args.plan = True
             else:
@@ -237,12 +239,18 @@ def main(argv=None):
             if input("Allow source downloads (and selected install actions if requested)? [y/N] ").strip().lower() not in ("y", "yes"):
                 print("Aborted; nothing ran.")
                 return 0
-        if not args.plan and args.yes and not (args.features or args.all):
-            raise ValueError("--yes requires --features or --all")
+        if not args.plan and args.yes and not (args.features or args.all or args.update):
+            raise ValueError("--yes requires --features or --all (or --update for installed checkouts)")
         home = args.setup_home or (Path(args.root).expanduser() / "setup" if args.root else default_setup_home())
         cs = bootstrap_setup(home, allow_fetch=not args.plan)
-        from colibri_setup.provision import plan_from_args, print_plan, execute_plan, selected_features
+        from colibri_setup.config import KEYS
+        from colibri_setup.provision import plan_from_args, print_plan, execute_plan, selected_features, update_installed
         manifest = cs.load_manifest(args.manifest)
+        if args.update and not (args.features or args.all):
+            count = update_installed(manifest, root=args.root, config=args.config,
+                                     overrides={key: getattr(args, key, None) for key in KEYS})
+            print(f"Updated {count} checkout(s). Rebuild any artifacts you distribute; the engine checkout is never moved implicitly.")
+            return 0
         if args.features or args.all:
             features = selected_features(manifest, args.features, args.all)
         else:

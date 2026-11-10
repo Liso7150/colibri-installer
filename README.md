@@ -12,6 +12,7 @@ drives its plan/fetch/install pipeline.
 - Feature menu with dependency closure; unknown or cyclic features are rejected.
 - Install destination selection (`--root` or interactive) — repos, venv, models, caches and config stay on the device.
 - Plan / fetch / install / build actions; the installer never downloads models or starts a server.
+- `--update` fast-forwards every installed clean checkout from GitHub (local work is never reset).
 - Termux on Android installs the local core + PWA on the phone; Android and iOS browsers are PWA clients.
 
 ## Run
@@ -20,6 +21,7 @@ drives its plan/fetch/install pipeline.
 python install.py                                          # interactive menu
 python install.py --features inference,desktop --yes        # fetch sources only
 python install.py --all --yes                               # fetch everything
+python install.py --update --yes                            # update installed checkouts
 python install.py --install --features inference,desktop --yes
 python install.py --install --features inference --build --yes
 python bootstrap.py --plan --all                            # read-only plan
@@ -29,9 +31,10 @@ python bootstrap.py --plan --all                            # read-only plan
 `--fetch-only`, preserving the historical "download the repos" behavior.
 `--plan`, `--fetch-only`, `--install` and `--build` always win. `--yes` confirms
 an explicit action but never selects features; noninteractive runs must pass
-`--features` or `--all`. Installing also creates the shared venv, installs the
-selected dependencies and writes `~/.colibri/config.json` after all actions
-succeed. No server is started by the installer.
+`--features` or `--all` (or `--update` for installed checkouts). Installing also
+creates the shared venv, installs the selected dependencies and writes
+`~/.colibri/config.json` after all actions succeed. No server is started by the
+installer.
 
 ## Install destination
 
