@@ -91,6 +91,38 @@ Windows / macOS / Linux run the installer directly. Android can run the core and
 PWA locally in Termux (see [`android/`](android/README.md)); Android browsers and
 iOS use the PWA as a client of a Fennec host. There is no APK build pipeline yet.
 
+## Migrating an existing Colibri install
+
+`migrate_rebrand.py` moves a pre-1.4 machine onto the Fennec names in one pass:
+the suite/hub/models folders, `D:/.cache/colibri-*`, `~/.colibri` → `~/.fennec`,
+`~/.colibri-code` → `~/.fennec-desktop`, the roots inside `config.json`, the
+legacy `acp.registry.colibri` records in Air's overlay and `installed.json`, the
+`Colibri` picker entry, the `air.acp.registry.path` vmoption, and the model path
+in the engine's local stack scripts.
+
+```bash
+python migrate_rebrand.py            # print the plan, change nothing
+python migrate_rebrand.py --apply    # perform it
+```
+
+It is idempotent and stops at the first locked folder without rewriting any
+config, so a failed run is safe to repeat. **Close Qoder and every JetBrains IDE
+first**: Windows refuses to rename a directory while a process holds a file
+inside it open (Qoder's indexer holds the desktop build's `release-*/app.asar`).
+
+On Windows, copy `migrate-fennec.bat` **outside** the suite (for example to
+`D:\MIGRATE-FENNEC.bat`) and run that. `cmd.exe` keeps a handle on the running
+batch file, so a launcher left inside `D:\Colibri-Suite` would block the rename
+it is trying to perform; the copy also stages the Python script in `%TEMP%`.
+
+Deliberately untouched: the engine checkout `D:/Colibri` (upstream
+[JustVugg/colibri](https://github.com/JustVugg/colibri)), its `.venv`, its `COLI_*`
+variables and its `c/coli` entry point. Every edited file keeps a
+`*.bak-fennec-rebrand` backup beside it, and the stale desktop code index is
+retired rather than rewritten so the sidecar rebuilds it. Afterwards install
+`FennecDesktop-1.4.0-x64.exe` and `FennecDesktop-plugin-1.4.0.zip` and start the
+IDE once so it republishes the Fennec Air card.
+
 ## Tests
 
 ```bash
