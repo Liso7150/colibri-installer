@@ -1,41 +1,61 @@
-# Colibri on Android (scaffold)
+# Colibri on Android
 
-Android is a **scaffold** in this release, not a finished native app. The Colibri
-engine is native C + Vulkan and the apps are Python/Electron, so the practical
-path on Android is **Termux** (a Linux-like userspace) running the same setup
-hub, with a WebView front-end. A native Kotlin/WebView wrapper is sketched below.
+Android is a **client** in this release: the model runs on a Windows/macOS/Linux
+host and the phone uses the shared coding-agent PWA. The hub detects
+`os=Android` as `client_only` and refuses on-device engine installation, because a
+35B MoE and a desktop-sized KV cache do not fit a phone. This folder also ships a
+Termux fetch script and a Kotlin WebView scaffold; neither builds an APK in CI.
 
-## Path A — Termux (recommended, works today)
+## Path A — PWA client (recommended)
 
-1. Install [Termux](https://termux.dev) (F-Droid build).
-2. Run the bootstrap:
+1. On the host, install the `coding-agent` or `desktop` feature and start the
+   shared core (`colibri-agent serve`).
+2. Open the host's PWA in Android Chrome and use "Add to Home screen".
+3. A non-loopback host requires `COLIBRI_APP_TOKEN` plus TLS in front of the core
+   (`COLIBRI_TLS_CERTFILE` / `COLIBRI_TLS_KEYFILE`); plain LAN HTTP is refused.
+   The phone stores the token in session storage only.
+
+No inference happens on the phone.
+
+## Path B — Termux (fetch + manual CPU experiment)
+
+Termux gives an Android phone a Linux-like userspace. The script installs
+`python`/`git`/a C toolchain, clones this installer, and fetches the
+`inference` sources. It deliberately does **not** install dependencies, write
+runtime config or start a server, and the hub still reports client-only mode:
 
 ```bash
 bash termux-setup.sh
 ```
 
-It installs `python`/`git`, clones the installer, and runs device detection. On a
-phone the engine runs CPU-only (no discrete GPU); pick a small model and the
-`balanced` policy. The installer starts the Colibri server on `127.0.0.1:8184`.
+A CPU-only engine build on Termux is **not validated** by CI. If you want to try
+it with a small model you chose yourself:
 
-3. Open `http://127.0.0.1:8184` in the browser, or the coding-agent UI.
+```bash
+make -C "$HOME/Colibri/c" coli
+"$HOME/Colibri/c/coli" serve --model <small-model> --ctx 2048 --policy balanced --port 8184
+```
 
-## Path B — native WebView wrapper (scaffold)
+Then open `http://127.0.0.1:8184` in the phone browser. Do not point this at the
+35B model.
 
-`webview/MainActivity.kt` is a minimal Android activity that loads the local
-Colibri server in a WebView. To build it you need the Android SDK + Gradle; this
-repo ships the source scaffold, not a compiled APK. Steps:
+## Path C — native WebView wrapper (scaffold)
+
+`webview/MainActivity.kt` is a minimal activity that loads a Colibri WebView. To
+build it you need the Android SDK + Gradle; this repo ships source, not an APK:
 
 1. Create an Android Studio project (Empty Activity, Kotlin).
-2. Replace `MainActivity.kt` with the scaffold; add `INTERNET` permission.
-3. Point `COLIBRI_URL` at the Termux-run server (or a LAN host).
-4. Build the APK.
+2. Replace `MainActivity.kt` with the scaffold; add the `INTERNET` permission.
+3. Point `COLIBRI_URL` at your host's HTTPS PWA URL (same-origin rules apply).
+4. Build the APK yourself.
 
 ## Status
 
-- Termux bootstrap: provided.
+- PWA install: supported on the host and verified in desktop Chrome.
+- Termux fetch script: provided; CPU engine build unverified.
 - WebView activity: source scaffold provided.
-- CI APK build / Play packaging: **not yet implemented** (roadmap).
+- CI APK build / Play packaging: **not implemented** (roadmap).
 
 Engine: [JustVugg/colibri](https://github.com/JustVugg/colibri). Setup:
 [colibri-environment-setup](https://github.com/Liso7150/colibri-environment-setup).
+Training: [AirLLM](https://github.com/lyogavin/airllm).
