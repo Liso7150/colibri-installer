@@ -6,6 +6,14 @@ features/apps to fetch and install. It bootstraps the
 [environment setup](https://github.com/Liso7150/colibri-environment-setup) hub and
 drives its plan/fetch/install pipeline.
 
+## Features
+
+- Device detection: OS, CPU/RAM, NVIDIA/Vulkan/Apple GPUs, Intel NPU, free disk and Python.
+- Feature menu with dependency closure; unknown or cyclic features are rejected.
+- Install destination selection (`--root` or interactive) — repos, venv, models, caches and config stay on the device.
+- Plan / fetch / install / build actions; the installer never downloads models or starts a server.
+- Termux on Android installs the local core + PWA on the phone; Android and iOS browsers are PWA clients.
+
 ## Run
 
 ```bash
