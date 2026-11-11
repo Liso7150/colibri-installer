@@ -126,7 +126,7 @@ Deliberately untouched: the engine checkout (default `~/Colibri`, upstream
 variables and its `c/coli` entry point. Every edited file keeps a
 `*.bak-fennec-rebrand` backup beside it, and the stale desktop code index is
 retired rather than rewritten so the sidecar rebuilds it. Afterwards install
-`FennecDesktop-1.9.0-x64.exe` and `Fennec-plugin-1.9.0.zip` and start the
+`FennecDesktop-2.0.0-x64.exe` and `Fennec-plugin-2.0.0.zip` and start the
 IDE once so it republishes the Fennec Air card.
 
 ## Tests
