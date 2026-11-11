@@ -223,8 +223,12 @@ def choose_features(cs, preselected, assume_yes, *, all_features=False, recommen
     return list(dict.fromkeys(chosen))
 
 
+VERSION = "1.6.0"
+
+
 def parser():
     ap = argparse.ArgumentParser(description="Portable Fennec environment bootstrap")
+    ap.add_argument("--version", action="version", version=f"fennec-installer {VERSION}")
     mode = ap.add_mutually_exclusive_group()
     mode.add_argument("--plan", "--dry-run", action="store_true", help="read-only action plan")
     mode.add_argument("--fetch-only", action="store_true", help="sources only, no installs/config writes")
