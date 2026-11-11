@@ -13,7 +13,7 @@ from urllib.parse import urlsplit
 SETUP_REPO = "https://github.com/Liso7150/fennec-environment-setup.git"
 ROOT_SUBDIRS = ("engine", "suite", "models", "cache", "setup")
 LAYOUT_HELP = {
-    "engine": "Colibri engine checkout and shared Python venv",
+    "engine": "Colibri engine checkout (upstream base idea)",
     "suite": "suite sources: desktop, core, CLI, plugins, fine-tuning",
     "models": "model weights you add later (nothing is downloaded here)",
     "cache": "pip / npm / Hugging Face caches",
@@ -22,7 +22,7 @@ LAYOUT_HELP = {
 
 
 def default_destination(home=None):
-    return Path(home or Path.home()) / "Colibri"
+    return Path(home or Path.home()) / "Fennec"
 
 
 def available_volumes():

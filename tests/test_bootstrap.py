@@ -61,7 +61,7 @@ class DestinationTests(unittest.TestCase):
             chosen = bootstrap.choose_destination(
                 None, interactive=True, home=home, ask=lambda prompt: next(answers),
                 echo=echoed.append)
-            self.assertEqual(chosen, (Path(home) / "Colibri").resolve())
+            self.assertEqual(chosen, (Path(home) / "Fennec").resolve())
             output = "\n".join(echoed)
             self.assertIn("engine", output)
             self.assertIn("stays on this device", output)

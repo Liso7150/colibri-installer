@@ -10,7 +10,7 @@ drives its plan/fetch/install pipeline.
 
 - Device detection: OS, CPU/RAM, NVIDIA/Vulkan/Apple GPUs, Intel NPU, free disk and Python.
 - Feature menu with dependency closure; unknown or cyclic features are rejected.
-- Install destination selection: an interactive drive picker (`--drive E` -> `E:/Fennec`) or any folder (`--root`). — repos, venv, models, caches and config stay on the device.
+- Install destination selection: an interactive drive picker (`--drive E` -> `E:/Fennec`) or any folder (`--root`). — repos, models, caches and config stay on the device.
 - Plan / fetch / install / build actions; the installer never downloads models or starts a server.
 - `--update` fast-forwards every installed clean checkout from GitHub (local work is never reset).
 - Termux on Android installs the local core + PWA on the phone; Android and iOS browsers are PWA clients.
@@ -32,25 +32,25 @@ python bootstrap.py --plan --all                            # read-only plan
 `--plan`, `--fetch-only`, `--install` and `--build` always win. `--yes` confirms
 an explicit action but never selects features; noninteractive runs must pass
 `--features` or `--all` (or `--update` for installed checkouts). Installing also
-creates the shared venv, installs the selected dependencies and writes
+provisions `python` on PATH with the selected dependencies and writes
 `~/.fennec/config.json` after all actions succeed. No server is started by the
 installer.
 
 ## Install destination
 
 On an interactive run the installer first asks where everything should live: it
-lists the drives it finds with their free space, offers the default (`~/Colibri`),
-and accepts any drive letter or folder (default `~/Colibri`) and shows the layout before anything is downloaded:
+lists the drives it finds with their free space, offers the default (`~/Fennec`),
+and accepts any drive letter or folder, then shows the layout before anything is downloaded:
 
 ```
-ROOT/engine   Colibri engine checkout and shared Python venv
+ROOT/engine   Colibri engine checkout (upstream base idea)
 ROOT/suite    suite sources: desktop, core, CLI, plugins, fine-tuning
 ROOT/models   model weights you add later (nothing is downloaded here)
 ROOT/cache    pip / npm / Hugging Face caches
 ROOT/setup    environment setup hub used by this installer
 ```
 
-Every repository, the venv, your model files and all caches stay under that
+Every repository, your model files and all caches stay under that
 folder on this device. Only public GitHub sources are downloaded — no models
 are fetched automatically and nothing is uploaded. The shared runtime config is
 the one small file written outside it (`~/.fennec/config.json`), because every
@@ -70,7 +70,7 @@ accelerator backend was compiled, so the plan keeps CPU until you verify an
 engine build and switch `backend` yourself. The Intel NPU is an embedding
 sidecar only, never a decoder. Selecting the `npu` feature installs what that
 sidecar imports (`openvino`, `openvino-tokenizers`, `numpy`, `huggingface-hub`)
-into the interpreter the apps resolve — the shared venv when it exists — and
+into the interpreter the apps resolve — `python` on PATH — and
 fetches the prebuilt OpenVINO IR embedding model
 (`OpenVINO/bge-base-en-v1.5-int8-ov`) into
 `<models_root>/embed/bge-base-en-v1.5-int8-ov`, which is exactly where the
@@ -118,11 +118,11 @@ batch file, so a launcher left inside the suite would block the rename
 it is trying to perform; the copy also stages the Python script in `%TEMP%`.
 
 Deliberately untouched: the engine checkout (default `~/Colibri`, upstream
-[JustVugg/colibri](https://github.com/JustVugg/colibri)), its `.venv`, its `COLI_*`
+[JustVugg/colibri](https://github.com/JustVugg/colibri)), its `COLI_*`
 variables and its `c/coli` entry point. Every edited file keeps a
 `*.bak-fennec-rebrand` backup beside it, and the stale desktop code index is
 retired rather than rewritten so the sidecar rebuilds it. Afterwards install
-`FennecDesktop-1.4.0-x64.exe` and `FennecDesktop-plugin-1.4.0.zip` and start the
+`FennecDesktop-1.5.0-x64.exe` and `FennecDesktop-plugin-1.5.0.zip` and start the
 IDE once so it republishes the Fennec Air card.
 
 ## Tests

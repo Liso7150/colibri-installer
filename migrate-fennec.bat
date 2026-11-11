@@ -39,12 +39,8 @@ for %%P in (python.exe py.exe) do (
     where %%P >nul 2>nul && set "PY=%%P"
   )
 )
-if not defined PY if defined FENNEC_HOME if exist "%FENNEC_HOME%\.venv\Scripts\python.exe" set "PY=%FENNEC_HOME%\.venv\Scripts\python.exe"
-if not defined PY for %%L in (C D E F G H I J K L M N O P Q R S T U V W X Y Z) do (
-  if not defined PY if exist "%%L:\Colibri\.venv\Scripts\python.exe" set "PY=%%L:\Colibri\.venv\Scripts\python.exe"
-)
 if not defined PY (
-  echo No Python found on PATH, in FENNEC_HOME, or in any drive's Colibri\.venv.
+  echo No Python found on PATH. Install Python 3.10+ and re-run.
   exit /b 1
 )
 

@@ -32,7 +32,7 @@ screen for an app-like shell.
 What lands on the phone, and nowhere else:
 
 ```
-~/Colibri/engine    shared Python venv
+~/Colibri/engine    Colibri engine checkout
 ~/Colibri/suite     fennec-core + coding-agent PWA
 ~/Colibri/models    your models (none are downloaded)
 ~/Colibri/cache     pip cache
@@ -56,7 +56,7 @@ p.write_text(json.dumps(data, indent=2))
 PY
 # 3. fetch the engine sources, then build for that model (ARM build, unverified)
 python ~/fennec-installer/install.py --fetch-only --features inference --yes --root ~/Colibri
-~/Colibri/engine/.venv/bin/python ~/Colibri/engine/c/coli build --model ~/Colibri/models/<name>
+python ~/Colibri/engine/c/coli build --model ~/Colibri/models/<name>
 ```
 
 Do not point this at the 35B model.

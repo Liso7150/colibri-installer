@@ -22,7 +22,7 @@ cat > "$ROOT/open-fennec.sh" <<EOF
 set -e
 ROOT="$ROOT"
 PORT="$PORT"
-AGENT="\$ROOT/engine/.venv/bin/fennec-agent"
+AGENT="fennec-agent"
 termux-wake-lock
 "\$AGENT" serve --host 127.0.0.1 --port "\$PORT" &
 CORE=\$!
