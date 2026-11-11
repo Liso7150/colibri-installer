@@ -223,7 +223,7 @@ def choose_features(cs, preselected, assume_yes, *, all_features=False, recommen
     return list(dict.fromkeys(chosen))
 
 
-VERSION = "1.8.1"
+VERSION = "1.9.0"
 
 
 def parser():
@@ -246,7 +246,8 @@ def parser():
                                      "accepts C, C: or E:/Apps/Fennec")
     ap.add_argument("--config")
     for key in ("engine-root", "suite-root", "models-root", "cache-root", "python", "model",
-                "engine-url", "web-root", "workspace", "backend", "policy"):
+                "engine-url", "web-root", "workspace", "backend", "policy",
+                "jev-root", "openbot-url"):
         ap.add_argument("--" + key)
     ap.add_argument("--ctx", type=int)
     ap.add_argument("--native-target", default="fennec")

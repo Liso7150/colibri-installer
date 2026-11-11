@@ -12,8 +12,11 @@ drives its plan/fetch/install pipeline.
 - Feature menu with dependency closure; unknown or cyclic features are rejected.
 - Install destination selection: an interactive drive picker (`--drive E` -> `E:/Fennec`) or any folder (`--root`). — repos, models, caches and config stay on the device.
 - Plan / fetch / install / build actions; the installer never downloads models or starts a server.
-- `--update` fast-forwards every installed clean checkout from GitHub (local work is never reset).
+- `--update` fast-forwards every installed clean Fennec checkout from GitHub (local
+  work is never reset, and the upstream engine, Jev and OpenBot checkouts are left
+  for you to update deliberately).
 - Termux on Android installs the local core + PWA on the phone; Android and iOS browsers are PWA clients.
+- `browser-outlets` clones [Jev](https://github.com/browser-use/jev-ultrafast) and [OpenBot](https://github.com/CopilotKit/OpenBot) beside the suite and stops there: no dependencies installed, no patches, nothing started. The shared core drives both, and `--jev-root` / `--openbot-url` point at a checkout or server you already have.
 
 ## Run
 
@@ -24,6 +27,7 @@ python install.py --all --yes                               # fetch everything
 python install.py --update --yes                            # update installed checkouts
 python install.py --install --features inference,desktop --yes
 python install.py --install --features inference --build --yes
+python install.py --features browser-outlets --yes          # clone Jev + OpenBot only
 python bootstrap.py --plan --all                            # read-only plan
 ```
 
@@ -44,7 +48,7 @@ and accepts any drive letter or folder, then shows the layout before anything is
 
 ```
 ROOT/engine   Colibri engine checkout (upstream base idea)
-ROOT/suite    suite sources: desktop, core, CLI, plugins, fine-tuning
+ROOT/suite    suite sources: desktop, core, CLI, plugins, fine-tuning, optional outlets
 ROOT/models   model weights you add later (nothing is downloaded here)
 ROOT/cache    pip / npm / Hugging Face caches
 ROOT/setup    environment setup hub used by this installer
@@ -122,7 +126,7 @@ Deliberately untouched: the engine checkout (default `~/Colibri`, upstream
 variables and its `c/coli` entry point. Every edited file keeps a
 `*.bak-fennec-rebrand` backup beside it, and the stale desktop code index is
 retired rather than rewritten so the sidecar rebuilds it. Afterwards install
-`FennecDesktop-1.5.0-x64.exe` and `FennecDesktop-plugin-1.5.0.zip` and start the
+`FennecDesktop-1.9.0-x64.exe` and `Fennec-plugin-1.9.0.zip` and start the
 IDE once so it republishes the Fennec Air card.
 
 ## Tests
@@ -135,4 +139,7 @@ python -m unittest discover -s tests -v
 
 Engine base idea: [JustVugg/colibri](https://github.com/JustVugg/colibri) —
 device-tiered MoE inference. Fine-tuning:
-[AirLLM](https://github.com/lyogavin/airllm).
+[AirLLM](https://github.com/lyogavin/airllm). Browser outlets:
+[browser-use/jev-ultrafast](https://github.com/browser-use/jev-ultrafast) and
+[CopilotKit/OpenBot](https://github.com/CopilotKit/OpenBot), both used exactly as
+upstream and never modified or vendored.

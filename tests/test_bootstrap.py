@@ -26,6 +26,18 @@ class SetupHomeTests(unittest.TestCase):
                 self.assertEqual(bootstrap.default_setup_home(), Path(directory).resolve())
 
 
+class OutletFlagTests(unittest.TestCase):
+    def test_outlet_overrides_reach_the_hub_as_keys(self):
+        args = bootstrap.parser().parse_args([
+            "--plan", "--features", "browser-outlets", "--jev-root", "~/my-jev",
+            "--openbot-url", "http://127.0.0.1:3001"])
+        self.assertEqual(args.jev_root, "~/my-jev")
+        self.assertEqual(args.openbot_url, "http://127.0.0.1:3001")
+
+    def test_version_is_1_9_0(self):
+        self.assertEqual(bootstrap.VERSION, "1.9.0")
+
+
 class DestinationTests(unittest.TestCase):
     def test_layout_covers_engine_suite_models_cache_setup(self):
         root = Path(tempfile.gettempdir()) / "fennec-layout"

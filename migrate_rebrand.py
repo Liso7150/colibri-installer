@@ -379,7 +379,7 @@ class Migration:
         self.rewrite_engine_scripts()
         self.say("")
         if self.apply:
-            self.say("Done. Next: install FennecDesktop-1.5.0-x64.exe and FennecDesktop-plugin-1.5.0.zip,")
+            self.say("Done. Next: install FennecDesktop-1.9.0-x64.exe and Fennec-plugin-1.9.0.zip,")
             self.say("then start the IDE once so it republishes the Fennec Air card.")
             self.say(f"Backups of every edited file sit next to it as *{BACKUP_SUFFIX}.")
         else:
