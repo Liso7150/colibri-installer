@@ -223,7 +223,7 @@ def choose_features(cs, preselected, assume_yes, *, all_features=False, recommen
     return list(dict.fromkeys(chosen))
 
 
-VERSION = "1.6.0"
+VERSION = "1.7.0"
 
 
 def parser():
