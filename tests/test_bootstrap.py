@@ -34,8 +34,8 @@ class OutletFlagTests(unittest.TestCase):
         self.assertEqual(args.jev_root, "~/my-jev")
         self.assertEqual(args.openbot_url, "http://127.0.0.1:3001")
 
-    def test_version_is_1_9_0(self):
-        self.assertEqual(bootstrap.VERSION, "2.0.0")
+    def test_version_is_2_5_0(self):
+        self.assertEqual(bootstrap.VERSION, "1.0.0")
 
 
 class DestinationTests(unittest.TestCase):

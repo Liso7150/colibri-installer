@@ -1,4 +1,4 @@
-# Fennec on Android
+![Fennec on Android 1.0.0 — two supported shapes: the core and PWA on the phone itself in Termux, or the phone as a PWA client of a desktop Fennec host. A 35B MoE model does not fit on a phone. On-phone Termux, PWA client, WebView scaffold, no APK build, engine on demand.](docs/hero.png)
 
 Android has two supported shapes:
 
@@ -15,8 +15,8 @@ runs fine locally.
 
 ## Path A — on the phone (Termux, recommended for a self-contained setup)
 
-Termux gives Android a Linux userspace with Python and a C toolchain. The script
-installs a phone-local core and PWA under `~/Colibri` and installs a single
+Termux gives Android a Linux userspace with Python and a Rust toolchain. The
+script installs a phone-local core and PWA under `~/Fennec` and installs a single
 `fennec-open` command:
 
 ```bash
@@ -32,11 +32,11 @@ screen for an app-like shell.
 What lands on the phone, and nowhere else:
 
 ```
-~/Colibri/engine    Colibri engine checkout
-~/Colibri/suite     fennec-core + coding-agent PWA
-~/Colibri/models    your models (none are downloaded)
-~/Colibri/cache     pip cache
-~/Colibri/setup     setup hub
+~/Fennec/engine     Fennec engine checkout (Rust)
+~/Fennec/suite      fennec-core + coding-agent PWA
+~/Fennec/models     your models (none are downloaded)
+~/Fennec/cache      pip cache
+~/Fennec/setup      setup hub
 ~/.fennec/config.json
 ```
 
@@ -45,18 +45,19 @@ engine could not start; the rest of the workspace still works. To try on-device
 inference with a small model you already have:
 
 ```bash
-# 1. place a model the engine supports under ~/Colibri/models/<name>
+# 1. place a model the engine supports under ~/Fennec/models/<name>
 # 2. point the shared config at it
 python - <<'PY'
 import json, pathlib
 p = pathlib.Path.home() / ".fennec" / "config.json"
 data = json.loads(p.read_text())
-data["model"] = str(pathlib.Path.home() / "Colibri" / "models" / "<name>")
+data["model"] = str(pathlib.Path.home() / "Fennec" / "models" / "<name>")
 p.write_text(json.dumps(data, indent=2))
 PY
-# 3. fetch the engine sources, then build for that model (ARM build, unverified)
-python ~/fennec-installer/install.py --fetch-only --features inference --yes --root ~/Colibri
-python ~/Colibri/engine/c/coli build --model ~/Colibri/models/<name>
+# 3. fetch the engine sources, then build Fennec for that model (ARM build, unverified)
+python ~/fennec-installer/install.py --fetch-only --features inference --yes --root ~/Fennec
+cargo build --release --manifest-path ~/Fennec/engine/Cargo.toml
+# the binary lands in ~/Fennec/engine/target/release/fennec and is launched directly
 ```
 
 Do not point this at the 35B model.
@@ -92,6 +93,9 @@ build it you need the Android SDK + Gradle; this repo ships source, not an APK:
 - WebView activity: source scaffold provided.
 - CI APK build / Play packaging: **not implemented** (roadmap).
 
-Engine base idea: [JustVugg/colibri](https://github.com/JustVugg/colibri). Setup:
+Engine: [Liso7150/fennec](https://github.com/Liso7150/fennec) (native Rust,
+`cargo build --release`). Engine base idea:
+[JustVugg/colibri](https://github.com/JustVugg/colibri), whose `c/coli` launcher
+remains the legacy fallback. Setup:
 [fennec-environment-setup](https://github.com/Liso7150/fennec-environment-setup).
 Training: [AirLLM](https://github.com/lyogavin/airllm).

@@ -9,10 +9,13 @@ release-*/app.asar, the IDE holds its plugin jar) the rename is reported and the
 run stops before any config is rewritten. Close Qoder and every JetBrains IDE,
 then re-run --apply to finish.
 
-The engine checkout is upstream JustVugg/colibri and keeps its name, its COLI_*
-variables and its c/coli entry point. Only the model path inside its local stack
-scripts follows the models folder rename. Nothing here assumes a particular
-drive: pass --suite, set FENNEC_SUITE, or run it from inside the suite.
+The engine checkout keeps its name, whichever engine it is: a Fennec root
+(default <drive>/Fennec, native Rust, target/release/fennec) is recognised and
+preserved exactly like the legacy upstream JustVugg/colibri root, which keeps its
+COLI_* variables and its c/coli entry point (Fennec reads COLI_API_KEY too). Only
+the model path inside its local stack scripts follows the models folder rename.
+Nothing here assumes a particular drive: pass --suite, set FENNEC_SUITE, or run
+it from inside the suite.
 
 Run the companion migrate-fennec.bat from OUTSIDE the suite (copy it to a folder
 outside the suite, for example the drive root): a batch file inside a directory
@@ -53,9 +56,21 @@ CACHE_DIRS = {
     "colibri": "fennec",
 }
 HUB_NAMES = ("Colibri-Enviorment-Setup", "Colibri-Environment-Setup")
+# Fennec first, Colibri as the legacy fallback: neither engine root is ever
+# renamed or rewritten, only recognised so its stack scripts can be fixed.
+ENGINE_DIRS = ("Fennec", "Colibri")
 BACKUP_SUFFIX = ".bak-fennec-rebrand"
 LEGACY_AGENT_ID = "colibri"
 LEGACY_INSTALL_KEY = "acp.registry.colibri"
+
+
+def engine_kind(engine: Path) -> str:
+    """Which engine lives at this root: the Rust binary tree or the Python launcher."""
+    engine = Path(engine)
+    if ((engine / "Cargo.toml").is_file() or (engine / "target").is_dir()
+            or engine.name.lower() == "fennec"):
+        return "fennec"
+    return "colibri"
 
 
 @dataclass
@@ -100,13 +115,15 @@ def discover(suite: str | None = None) -> Roots:
     hub = next((drive / name for name in HUB_NAMES if (drive / name).is_dir()), None)
     models = next((p for p in (drive / "fennec-models", drive / "colibri-models") if p.is_dir()),
                   drive / "colibri-models")
+    engine = next((drive / name for name in ENGINE_DIRS if (drive / name).is_dir()),
+                  drive / ENGINE_DIRS[0])
     return Roots(
         suite=current,
         new_suite=drive / "Fennec-Suite",
         models=models,
         new_models=drive / "fennec-models",
         cache=drive / ".cache",
-        engine=drive / "Colibri",
+        engine=engine,
         home=home,
         roaming=appdata / "JetBrains",
         local=local / "JetBrains",
@@ -116,7 +133,12 @@ def discover(suite: str | None = None) -> Roots:
 
 
 def replacements(roots: Roots) -> list[tuple[str, str]]:
-    """Ordered longest-first so the engine checkout is never rewritten."""
+    """Ordered longest-first so the engine checkout is never rewritten.
+
+    Neither engine root is matched by any pair: a Fennec root (Fennec,
+    target/release/fennec, Cargo.toml, FENNEC_*/COLI_* names) and the legacy
+    Colibri root (Colibri, c/coli) both survive verbatim.
+    """
     pairs: list[tuple[str, str]] = []
 
     def add(old: str, new: str) -> None:
@@ -354,7 +376,8 @@ class Migration:
                 self.edit_text(options, pairs)
 
     def rewrite_engine_scripts(self) -> None:
-        self.say("Engine stack scripts (model path only)")
+        kind = engine_kind(self.roots.engine)
+        self.say(f"Engine stack scripts ({kind} engine kept; model path only)")
         scripts = self.roots.engine / "scripts"
         if not scripts.is_dir():
             return
@@ -369,6 +392,7 @@ class Migration:
         os.chdir(tempfile.gettempdir())
         self.say(f"Fennec rebrand migration ({'apply' if self.apply else 'dry run'})")
         self.say(f"  suite  {self.roots.suite} -> {self.roots.new_suite}")
+        self.say(f"  engine {self.roots.engine} ({engine_kind(self.roots.engine)}; kept, never renamed)")
         if not self.rename_folders():
             self.say("")
             self.say("Stopped: a folder is locked. Close Qoder and every JetBrains IDE,")
@@ -379,7 +403,7 @@ class Migration:
         self.rewrite_engine_scripts()
         self.say("")
         if self.apply:
-            self.say("Done. Next: install FennecDesktop-2.0.0-x64.exe and Fennec-plugin-2.0.0.zip,")
+            self.say("Done. Next: install FennecDesktop-1.0.0-x64.exe and Fennec-plugin-1.0.0.zip,")
             self.say("then start the IDE once so it republishes the Fennec Air card.")
             self.say(f"Backups of every edited file sit next to it as *{BACKUP_SUFFIX}.")
         else:

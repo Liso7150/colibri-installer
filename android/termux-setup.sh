@@ -6,6 +6,8 @@ ROOT="${FENNEC_ROOT:-$HOME/Fennec}"
 PORT="${FENNEC_PORT:-8787}"
 
 pkg update -y
+# rust supplies cargo, which builds the native Fennec engine on the phone
+# (cargo build --release in $ROOT/engine); clang/cmake cover its C dependencies.
 pkg install -y python git clang make cmake rust binutils curl termux-tools
 
 if [ ! -d "$HOME/fennec-installer" ]; then
@@ -43,5 +45,5 @@ ln -sf "$ROOT/open-fennec.sh" "$PREFIX/bin/fennec-open"
 echo
 echo "Done. Start Fennec with:  fennec-open"
 echo "The local engine starts on demand; all files stay under $ROOT."
-echo "On-device inference needs a compatible small model in $ROOT/models and an engine build."
+echo "On-device inference needs a compatible small model in $ROOT/models and a Fennec build (cargo build --release in $ROOT/engine)."
 echo "The 35B model does not fit on a phone."

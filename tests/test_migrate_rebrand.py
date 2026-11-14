@@ -230,6 +230,108 @@ class SafetyTests(LayoutCase):
         self.assertIn("Colibri", picker["agent_servers"])
 
 
+class FennecEngineTests(unittest.TestCase):
+    """A Fennec-based install migrates too, and its engine root is preserved."""
+
+    def setUp(self):
+        self._cwd = Path.cwd()
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.addCleanup(lambda: os.chdir(self._cwd))
+        self.base = Path(self._tmp.name).resolve()
+        self.home = self.base / "home"
+        self.suite = self.base / "Colibri-Suite"
+        self.models = self.base / "colibri-models"
+        self.engine = self.base / "Fennec"
+        self.roots = migrate.Roots(
+            suite=self.suite, new_suite=self.base / "Fennec-Suite",
+            models=self.models, new_models=self.base / "fennec-models",
+            cache=self.base / ".cache", engine=self.engine, home=self.home,
+            roaming=self.home / "AppData/Roaming/JetBrains",
+            local=self.home / "AppData/Local/JetBrains",
+        )
+        (self.suite / "colibri-code").mkdir(parents=True)
+        (self.models / "qwen36-35b").mkdir(parents=True)
+        (self.engine / "target/release").mkdir(parents=True)
+        (self.engine / "Cargo.toml").write_text("[package]\nname = 'fennec'\n", encoding="utf-8")
+        (self.engine / "target/release/fennec.exe").write_bytes(b"")
+        (self.engine / "scripts").mkdir(parents=True)
+        (self.engine / "scripts/start_stack.pyw").write_text(
+            '"--model", "D:/colibri-models/qwen36-35b",\n', encoding="utf-8")
+        write_json(self.home / ".colibri/config.json", {
+            "engine_root": "D:/Fennec",
+            "suite_root": "D:/Colibri-Suite",
+            "models_root": "D:/colibri-models",
+            "model": "D:/colibri-models/qwen36-35b",
+            "engine_url": "http://127.0.0.1:8184",
+        })
+
+    def run_migration(self, apply=True):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = migrate.Migration(self.roots, apply=apply).run()
+        return code, out.getvalue()
+
+    def test_fennec_root_is_recognised_and_never_renamed(self):
+        code, output = self.run_migration()
+        self.assertEqual(code, 0)
+        self.assertIn("fennec; kept", output)
+        self.assertTrue((self.engine / "Cargo.toml").is_file())
+        self.assertTrue((self.engine / "target/release/fennec.exe").is_file())
+        data = json.loads((self.home / ".fennec/config.json").read_text(encoding="utf-8"))
+        self.assertEqual(data["engine_root"], "D:/Fennec")
+        self.assertEqual(data["engine_url"], "http://127.0.0.1:8184")
+        self.assertEqual(data["suite_root"], "D:/Fennec-Suite")
+        self.assertEqual(data["model"], "D:/fennec-models/qwen36-35b")
+
+    def test_fennec_identities_survive_the_rewrite(self):
+        pairs = migrate.replacements(self.roots)
+        for value in ("D:/Fennec", "D:/Fennec/target/release/fennec.exe", "D:\\Fennec",
+                      "~/Fennec", "FENNEC_API_KEY", "COLI_API_KEY", "FENNEC_HOME",
+                      "Cargo.toml", "cargo build --release", "c/coli",
+                      "https://github.com/Liso7150/fennec"):
+            self.assertEqual(migrate.rewrite(value, pairs), value, value)
+
+    def test_fennec_stack_scripts_follow_the_models_rename(self):
+        self.run_migration()
+        script = (self.engine / "scripts/start_stack.pyw").read_text(encoding="utf-8")
+        self.assertIn("D:/fennec-models/qwen36-35b", script)
+        self.assertNotIn("colibri-models", script)
+
+    def test_engine_kind_detection(self):
+        self.assertEqual(migrate.engine_kind(self.engine), "fennec")
+        legacy = self.base / "Colibri"
+        (legacy / "c").mkdir(parents=True)
+        (legacy / "c/coli").write_text("# launcher\n", encoding="utf-8")
+        self.assertEqual(migrate.engine_kind(legacy), "colibri")
+
+    def test_discover_prefers_fennec_and_falls_back_to_colibri(self):
+        legacy = self.base / "Colibri"
+        legacy.mkdir()
+        self.assertEqual(migrate.discover(str(self.suite)).engine, self.engine)
+        with tempfile.TemporaryDirectory() as other:
+            base = Path(other).resolve()
+            suite = base / "Colibri-Suite"
+            (suite / "colibri-code").mkdir(parents=True)
+            (base / "Colibri").mkdir()
+            self.assertEqual(migrate.discover(str(suite)).engine, base / "Colibri")
+
+    def test_a_fennec_engine_root_in_a_clean_layout_is_preserved(self):
+        roots = migrate.Roots(
+            suite=self.suite, new_suite=self.base / "Fennec-Suite",
+            models=self.models, new_models=self.base / "fennec-models",
+            cache=self.base / ".cache", engine=self.base / "Fennec" / "engine",
+            home=self.home, roaming=self.roots.roaming, local=self.roots.local,
+        )
+        pairs = migrate.replacements(roots)
+        for value in (str(roots.engine), str(roots.engine / "target/release/fennec.exe"),
+                      str(roots.engine / "Cargo.toml")):
+            self.assertEqual(migrate.rewrite(value, pairs), value, value)
+        # The suite around the engine still migrates.
+        self.assertEqual(migrate.rewrite(str(self.suite / "colibri-code"), pairs),
+                         str(roots.new_suite / "fennec-desktop"))
+
+
 class ReplacementTests(unittest.TestCase):
     def setUp(self):
         self.roots = migrate.Roots(

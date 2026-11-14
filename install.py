@@ -12,6 +12,10 @@ and the shared runtime config written.
     python install.py --update --yes                      # update installed checkouts
     python install.py --install --features inference,desktop --yes
 
+The engine is Fennec (https://github.com/Liso7150/fennec), a native Rust binary
+built with `cargo build --release` and launched directly; a legacy Colibri
+`c/coli` checkout at the configured engine root is still supported.
+
 Credits: the engine's base idea is Colibri (https://github.com/JustVugg/colibri);
 fine-tuning uses AirLLM (https://github.com/lyogavin/airllm).
 """
